@@ -1,0 +1,431 @@
+﻿
+<
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Llama Inspector | AI Inspection</title>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #000;
+      --panel: #050505;
+      --border: #123d3d;
+      --text: #e8ffff;
+      --muted: #a6b2ca;
+      --accent: #00fff0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #000;
+      color: var(--text);
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      width: min(100% - 32px, 960px);
+      margin: 42px auto;
+    }
+
+    .brand {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 3px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 6vw, 48px);
+      margin: 12px 0;
+      color: var(--accent);
+      text-shadow: 0 0 16px #00fff044;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 28px;
+    }
+
+    .card {
+      min-width: 0;
+      padding: 24px;
+      background: #050505;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 0 20px #00fff008;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 19px;
+      color: var(--accent);
+    }
+
+    .dropzone {
+      display: grid;
+      place-items: center;
+      min-height: 180px;
+      padding: 20px;
+      border: 1px dashed #176060;
+      border-radius: 12px;
+      text-align: center;
+      color: var(--muted);
+      background: #020606;
+    }
+
+    .drop-icon {
+      font-size: 32px;
+      color: var(--accent);
+    }
+
+    input[type="file"] {
+      width: 100%;
+      margin-top: 18px;
+      color: var(--muted);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 18px;
+      background: var(--accent);
+      color: #000;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: box-shadow .2s, opacity .2s;
+    }
+
+    button:hover:not(:disabled) {
+      box-shadow: 0 0 18px #00fff066;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    #preview {
+      display: none;
+      width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+      margin-top: 18px;
+      border-radius: 10px;
+      background: #000;
+      border: 1px solid #123d3d;
+    }
+
+    .status {
+      color: var(--muted);
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    /* JARVIS scanning animation */
+    .scan-status {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin: 14px 0;
+      padding: 12px;
+      border: 1px solid #176060;
+      border-radius: 10px;
+      background: #020606;
+      color: var(--accent);
+    }
+
+  .scan-status.active {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 10;
+} {
+      display: flex;
+    }
+
+    .scan-ring {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #176060;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: jarvis-spin .8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .scan-lines {
+      height: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+      background: #123d3d;
+      border-radius: 5px;
+    }
+
+    .scan-lines::after {
+      content: "";
+      display: block;
+      width: 35%;
+      height: 100%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      animation: scan-sweep 1.4s ease-in-out infinite;
+    }
+
+    @keyframes jarvis-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes scan-sweep {
+      0% { transform: translateX(-110%); }
+      100% { transform: translateX(300%); }
+    }
+
+    .report-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .result {
+      padding: 16px;
+      border-radius: 10px;
+      background: #020202;
+      border: 1px solid var(--border);
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      min-height: 100px;
+    }
+
+    .tag {
+      display: inline-block;
+      color: var(--accent);
+      background: #050505;
+      border: 1px solid #123d3d;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    footer {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 650px) {
+      .grid { grid-template-columns: 1fr; }
+      main { margin-top: 24px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scan-ring, .scan-lines::after {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<main>
+  <div class="brand">VISION INTELLIGENCE WORKSPACE</div>
+  <h1>Llama Inspector</h1>
+  <p class="subtitle">
+    Inspect images of physical components with a local AI-assisted
+    visual analysis workflow.
+  </p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>01 / Image input</h2>
+
+      <div class="dropzone">
+        <div>
+          <div class="drop-icon" aria-hidden="true">⌁</div>
+          <p>Select a component image to begin</p>
+          <small>JPG, PNG or WEBP · Maximum 8 MB</small>
+        </div>
+      </div>
+
+      <form id="inspectionForm">
+        <input
+          type="file"
+          id="imageInput"
+          name="image"
+          accept="image/jpeg,image/png,image/webp"
+          required
+        >
+
+        <img id="preview" alt="Selected component preview">
+
+        <button id="inspectButton" type="submit">
+          Start AI Inspection
+        </button>
+      </form>
+
+      <div
+        class="scan-status"
+        id="scanStatus"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="scan-ring" aria-hidden="true"></span>
+        <div style="flex:1">
+          <strong id="scanMessage">INITIALIZING SCAN...</strong>
+          <div class="scan-lines" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <p class="status" id="status" role="status">
+        Waiting for an image.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>02 / Inspection report</h2>
+      <span class="tag">LOCAL AI · LLAVA</span>
+
+      <p class="status">
+        AI-assisted visual analysis. Findings are suggestions,
+        not a confirmed hardware diagnosis.
+      </p>
+
+      <div class="report-meta">
+        <span class="tag">VISUAL SCAN</span>
+        <span class="tag">SAFETY UNVERIFIED</span>
+      </div>
+
+      <div class="result" id="result" aria-live="polite">No inspection started.
+
+No hardware diagnosis has been performed.</div>
+    </section>
+  </div>
+
+  <footer>
+    Llama Inspector · Development build<br>
+    AI-assisted image inspection uses local Ollama and LLaVA.
+    An image alone cannot confirm electrical safety or prove
+    that a circuit board works.
+  </footer>
+</main>
+
+<script>
+  const form = document.getElementById("inspectionForm");
+  const input = document.getElementById("imageInput");
+  const preview = document.getElementById("preview");
+  const button = document.getElementById("inspectButton");
+  const statusText = document.getElementById("status");
+  const result = document.getElementById("result");
+  const scanStatus = document.getElementById("scanStatus");
+  const scanMessage = document.getElementById("scanMessage");
+
+  let previewUrl = null;
+
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+    }
+
+    preview.style.display = "none";
+
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      input.value = "";
+      statusText.textContent = "Choose an image smaller than 8 MB.";
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      input.value = "";
+      statusText.textContent = "Choose a JPG, PNG or WEBP image.";
+      return;
+    }
+
+    previewUrl = URL.createObjectURL(file);
+    preview.src = previewUrl;
+    preview.style.display = "block";
+    statusText.textContent = "Image selected and ready.";
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const file = input.files[0];
+
+    if (!file) {
+      statusText.textContent = "Please select an image first.";
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      statusText.textContent = "Choose an image smaller than 8 MB.";
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Scanning...";
+    scanStatus.classList.add("active");
+    scanMessage.textContent = "Analyzing image with LLaVA...";
+    statusText.textContent = "Sending image to the local AI service...";
+    result.textContent = "Preparing visual inspection...";
+
+    try {
+      const data = new FormData();
+      data.append("image", file);
+
+      const response = await fetch("/api/inspect", {
+        method: "POST",
+        body: data
+      });
+
+      scanMessage.textContent = "Generating inspection report...";
+      statusText.textContent = "Local AI analysis is in progress...";
+
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(
+          payload.message || payload.error || "Inspection failed."
+        );
+      }
+
+      result.textContent = payload.analysis;
+      statusText.textContent = "AI analysis complete. Review findings carefully.";
+    } catch (error) {
+      statusText.textContent = "Could not complete the inspection.";
+      result.textContent = "Inspection error: " + error.message;
+    } finally {
+      scanStatus.classList.remove("active");
+      button.disabled = false;
+      button.textContent = "Start AI Inspection";
+    }
+  });
+</script>
+</body>
+</html>
+
+
+
